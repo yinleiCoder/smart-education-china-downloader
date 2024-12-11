@@ -18,11 +18,21 @@ const downloadSingleBook = async (http, book, currentIndex, totalIndex) => {
     bookStorageFolder,
     `${book.title}.${book.format}`
   );
-  const res = await http({
-    url: tchMaterialFile(book.id),
-    method: "get",
-    responseType: "stream",
-  });
+  let res = null;
+  try {
+    res = await http({
+      url: tchMaterialFile(book.id),
+      method: "get",
+      responseType: "stream",
+    });
+  } catch (error) {
+    logger.error(error);
+    res = await http({
+      url: tchMaterialFile(book.id, true),
+      method: "get",
+      responseType: "stream",
+    });
+  }
   // content-length是由服务端提供的响应头
   const totalFileSize = parseInt(res.headers["content-length"], 10);
 
@@ -119,7 +129,7 @@ const extractTchBook = async (http, books) => {
     try {
       await downloadSingleBook(http, book, index, books.length);
     } catch (error) {
-      logger.error(`${book.title} ${book.id} 下载失败: ${error}`);
+      logger.error(`${book.title} ${book.id} 下载失败: ${error}\n`);
     }
   });
 };
